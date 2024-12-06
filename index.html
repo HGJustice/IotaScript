@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IOTA Block Submission</title>
+  </head>
+  <body>
+    <h1>IOTA Block Submission</h1>
+    <p id="output"></p>
+    <script>
+      const NODE_URL = 'http://localhost:14265';
+
+      function toHex(str) {
+      return '0x' + Array.from(str).map(char => char.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+      }
+
+      async function submitBlock() {
+        try {
+          const parentsResponse = await fetch(`${NODE_URL}/api/core/v2/tips`);
+          const parentsData = await parentsResponse.json();
+          const parents = parentsData.tips;
+
+          const postData = {
+            protocolVersion: 2,
+            parents: parents,
+            payload: {
+              type: 5,
+              tag: '0x54657374546167',
+              data: '0x48656c6c6f2054616e676c6521'
+            }
+          };
+
+          const response = await fetch(`${NODE_URL}/api/core/v2/blocks`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(postData)
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('Block created successfully:', data);
+          document.getElementById('output').innerText = `Block ID: ${data.blockId}`;
+        } catch (error) {
+          console.error('Error:', error);
+          document.getElementById('output').innerText = `Error: ${error.message}`;
+        }
+      }
+
+      submitBlock();
+    </script>
+  </body>
+</html>
